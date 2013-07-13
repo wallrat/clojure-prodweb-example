@@ -14,9 +14,6 @@ ln -f $0 $JAR
 # cleanup workdir on exit
 trap "rm -fr $WORKDIR" EXIT
 
-# uncomment to run service in it's own workdir
-#cd $WORKDIR
-
 # run the linked jar
 java -jar $JAR $*
 exit
