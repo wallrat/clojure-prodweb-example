@@ -23,20 +23,19 @@
     (if (.exists env-file)
       (read-string (slurp env-file)))))
 
-(defn get-git-sha1 []
+(def GIT-SHA1
   (let [r (.getResourceAsStream (-> *ns* .getClass .getClassLoader) "git-sha1")]
     (if r (slurp r) nil)))
 
 (def ^{:doc "A map of environment variables."}
   env
   (merge
-   {:git-sha1 (get-git-sha1)}
    (read-env-file)
    (read-system-env)))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defn log [t & m] (println (str "[" t "]" (clojure.string/join m))))
+(defn log [t & m] (println (str "[" (name t) "] " (clojure.string/join m))))
 
 
 ;; simple static file server
@@ -45,7 +44,7 @@
 (def server (atom nil))
 
 (defn start-httpd [port]
-  (println "starting HTTP on port" port)
+  (log :info "starting HTTP on port " port)
   (reset! server (run-jetty #'app {:port port :join? false})))
 
 ;; in production
@@ -55,25 +54,17 @@
 
 (defn unpack-resources []
   (when production?
-    (let [jarfile (env :jar)]
-      (log :info "Unpacking resources from" jarfile)
+    (log :info "Unpacking resources from " (env :jar))
 
-      (if (.isFile (java.io.File. jarfile))
-        (do
-          (log :info "Unpacking public.zip")
-          (clojure.java.shell/sh "bash" "-c" (str "unzip -o " jarfile " public.zip"))
+    (log :info "Unpacking public.zip")
+    (clojure.java.shell/sh "bash" "-c" (str "unzip -o " (env :jar) " public.zip"))
 
-          (log :info "Unpacking ./public")
-          (clojure.java.shell/sh "bash" "-c" "unzip -o public.zip"))
-        (do
-          (log :error jarfile "not found, can't extract public")
-          (System/exit 1))))))
-
+    (log :info "Unpacking ./public")
+    (clojure.java.shell/sh "bash" "-c" "unzip -o public.zip")))
 
 ;; main
 (defn -main [& args]
-  (println "Hello, World!")
-  ;; (pprint env)
+  (log :info "running version " GIT-SHA1)
   (unpack-resources)
   (start-httpd (read-string (env :port "9001"))))
 
