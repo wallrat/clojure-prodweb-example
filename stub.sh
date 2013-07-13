@@ -1,19 +1,22 @@
 #!/bin/bash
 
 # create a PID unique filename
-export WORKDIR=.$(basename $0).$$
-export JAR=app.jar
+PWD=$(pwd)
+export WORKDIR=$PWD/.$(basename $0).$$
+export JAR=$WORKDIR/app.jar
 
-# each process gets it's own wordir
+# each process gets it's own workdir
 mkdir -p $WORKDIR
 
 # make a hardlink to the jar
-ln -f $0 $WORKDIR/$JAR
+ln -f $0 $JAR
 
 # cleanup workdir on exit
-trap "cd ..; rm -fr $WORKDIR" EXIT
+trap "rm -fr $WORKDIR" EXIT
+
+# uncomment to run service in it's own workdir
+#cd $WORKDIR
 
 # run the linked jar
-cd $WORKDIR
 java -jar $JAR $*
 exit
